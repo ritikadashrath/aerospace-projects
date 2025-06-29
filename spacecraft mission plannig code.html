@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spacecraft Mission Planning Software</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #2d1b69 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: auto;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #00d4ff, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .mission-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .visualization-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-height: 500px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        button {
+            background: linear-gradient(45deg, #00d4ff, #4ecdc4);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .orbit-canvas {
+            width: 100%;
+            height: 450px;
+            border-radius: 10px;
+            background: radial-gradient(circle at center, #001122 0%, #000000 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .results-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-top: 20px;
+        }
+
+        .result-item {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #00d4ff;
+        }
+
+        .result-item h3 {
+            color: #00d4ff;
+            margin-bottom: 8px;
+        }
+
+        .planet {
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .orbit {
+            position: absolute;
+            border: 1px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .trajectory {
+            position: absolute;
+            border: 2px solid #ff6b6b;
+            border-radius: 50%;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.7;
+        }
+
+        .launch-window {
+            background: rgba(76, 205, 196, 0.1);
+            border: 1px solid #4ecdc4;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .warning {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid #ff6b6b;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Spacecraft Mission Planning Software</h1>
+        
+        <div class="mission-grid">
+            <div class="control-panel">
+                <h2>Mission Parameters</h2>
+                
+                <div class="form-group">
+                    <label for="departure-planet">Departure Planet</label>
+                    <select id="departure-planet">
+                        <option value="earth">Earth</option>
+                        <option value="mars">Mars</option>
+                        <option value="venus">Venus</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="destination-planet">Destination Planet</label>
+                    <select id="destination-planet">
+                        <option value="mars">Mars</option>
+                        <option value="venus">Venus</option>
+                        <option value="jupiter">Jupiter</option>
+                        <option value="earth">Earth</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="launch-date">Launch Date</label>
+                    <input type="date" id="launch-date">
+                </div>
+
+                <div class="form-group">
+                    <label for="spacecraft-mass">Spacecraft Mass (kg)</label>
+                    <input type="number" id="spacecraft-mass" value="1000" min="100" max="50000">
+                </div>
+
+                <div class="form-group">
+                    <label for="mission-type">Mission Type</label>
+                    <select id="mission-type">
+                        <option value="hohmann">Hohmann Transfer</option>
+                        <option value="bi-elliptic">Bi-elliptic Transfer</option>
+                        <option value="gravity-assist">Gravity Assist</option>
+                    </select>
+                </div>
+
+                <button onclick="calculateMission()">Calculate Mission Parameters</button>
+                <button onclick="findLaunchWindows()">Find Optimal Launch Windows</button>
+            </div>
+
+            <div class="visualization-panel">
+                <h2>Solar System Visualization</h2>
+                <div class="orbit-canvas" id="orbit-canvas">
+                    <!-- Orbits -->
+                    <div class="orbit" style="width: 120px; height: 120px;"></div>
+                    <div class="orbit" style="width: 180px; height: 180px;"></div>
+                    <div class="orbit" style="width: 240px; height: 240px;"></div>
+                    <div class="orbit" style="width: 300px; height: 300px;"></div>
+                    
+                    <!-- Sun -->
+                    <div class="planet" style="width: 20px; height: 20px; background: #ffeb3b; left: 50%; top: 50%; transform: translate(-50%, -50%);">☉</div>
+                    
+                    <!-- Planets -->
+                    <div class="planet" id="venus" style="width: 12px; height: 12px; background: #ff9800; left: 35%; top: 50%;">V</div>
+                    <div class="planet" id="earth" style="width: 14px; height: 14px; background: #2196f3; left: 25%; top: 50%;">E</div>
+                    <div class="planet" id="mars" style="width: 10px; height: 10px; background: #f44336; left: 15%; top: 50%;">M</div>
+                    <div class="planet" id="jupiter" style="width: 18px; height: 18px; background: #ff5722; left: 10%; top: 50%;">J</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-panel" id="results-panel" style="display: none;">
+            <h2>Mission Analysis Results</h2>
+            <div id="mission-results"></div>
+        </div>
+    </div>
+
+    <script>
+        // Planetary data (simplified)
+        const planetData = {
+            earth: {
+                name: "Earth",
+                semiMajorAxis: 149.6e6, // km
+                orbitalPeriod: 365.25, // days
+                mu: 398600.4418, // km³/s²
+                color: "#2196f3"
+            },
+            mars: {
+                name: "Mars",
+                semiMajorAxis: 227.9e6,
+                orbitalPeriod: 687,
+                mu: 42828,
+                color: "#f44336"
+            },
+            venus: {
+                name: "Venus",
+                semiMajorAxis: 108.2e6,
+                orbitalPeriod: 225,
+                mu: 324859,
+                color: "#ff9800"
+            },
+            jupiter: {
+                name: "Jupiter",
+                semiMajorAxis: 778.5e6,
+                orbitalPeriod: 4333,
+                mu: 126686534,
+                color: "#ff5722"
+            }
+        };
+
+        const sunMu = 132712440018; // km³/s²
+
+        // Set default launch date to 30 days from now
+        const defaultDate = new Date();
+        defaultDate.setDate(defaultDate.getDate() + 30);
+        document.getElementById('launch-date').value = defaultDate.toISOString().split('T')[0];
+
+        function calculateMission() {
+            const departure = document.getElementById('departure-planet').value;
+            const destination = document.getElementById('destination-planet').value;
+            const launchDate = document.getElementById('launch-date').value;
+            const mass = parseFloat(document.getElementById('spacecraft-mass').value);
+            const missionType = document.getElementById('mission-type').value;
+
+            if (departure === destination) {
+                showResults("Error: Departure and destination planets cannot be the same!");
+                return;
+            }
+
+            const results = calculateTrajectory(departure, destination, launchDate, mass, missionType);
+            showResults(results);
+            updateVisualization(departure, destination);
+        }
+
+        function calculateTrajectory(departure, destination, launchDate, mass, missionType) {
+            const depPlanet = planetData[departure];
+            const destPlanet = planetData[destination];
+            
+            // Calculate Hohmann transfer (simplified)
+            const r1 = depPlanet.semiMajorAxis;
+            const r2 = destPlanet.semiMajorAxis;
+            
+            // Semi-major axis of transfer orbit
+            const a_transfer = (r1 + r2) / 2;
+            
+            // Transfer time (half the orbital period of transfer ellipse)
+            const transferTime = Math.PI * Math.sqrt(Math.pow(a_transfer, 3) / sunMu) / (24 * 3600); // days
+            
+            // Delta-v calculations
+            const v1 = Math.sqrt(sunMu / r1); // orbital velocity at departure
+            const v2 = Math.sqrt(sunMu / r2); // orbital velocity at destination
+            
+            const v_transfer_dep = Math.sqrt(sunMu * (2/r1 - 1/a_transfer));
+            const v_transfer_arr = Math.sqrt(sunMu * (2/r2 - 1/a_transfer));
+            
+            const deltaV1 = Math.abs(v_transfer_dep - v1) / 1000; // km/s
+            const deltaV2 = Math.abs(v2 - v_transfer_arr) / 1000; // km/s
+            const totalDeltaV = deltaV1 + deltaV2;
+            
+            // Fuel requirements (using Tsiolkovsky rocket equation, assuming Isp = 300s)
+            const Isp = 300; // specific impulse
+            const g0 = 9.81; // m/s²
+            const fuelRequired = mass * (Math.exp(totalDeltaV * 1000 / (Isp * g0)) - 1);
+            
+            // Calculate arrival date
+            const launchDateObj = new Date(launchDate);
+            const arrivalDate = new Date(launchDateObj.getTime() + transferTime * 24 * 60 * 60 * 1000);
+
+            return {
+                departure: depPlanet.name,
+                destination: destPlanet.name,
+                launchDate: launchDateObj.toDateString(),
+                arrivalDate: arrivalDate.toDateString(),
+                transferTime: Math.round(transferTime),
+                deltaV1: deltaV1.toFixed(2),
+                deltaV2: deltaV2.toFixed(2),
+                totalDeltaV: totalDeltaV.toFixed(2),
+                fuelRequired: Math.round(fuelRequired),
+                transferDistance: Math.round(Math.PI * a_transfer / 1000000) // million km
+            };
+        }
+
+        function findLaunchWindows() {
+            const departure = document.getElementById('departure-planet').value;
+            const destination = document.getElementById('destination-planet').value;
+            
+            if (departure === destination) {
+                showResults("Error: Please select different departure and destination planets!");
+                return;
+            }
+
+            const depPlanet = planetData[departure];
+            const destPlanet = planetData[destination];
+            
+            // Calculate synodic period (time between optimal launch windows)
+            const synodicPeriod = Math.abs(1 / (1/depPlanet.orbitalPeriod - 1/destPlanet.orbitalPeriod));
+            
+            const baseDate = new Date();
+            const windows = [];
+            
+            for (let i = 0; i < 3; i++) {
+                const windowDate = new Date(baseDate.getTime() + (synodicPeriod * i * 24 * 60 * 60 * 1000));
+                const results = calculateTrajectory(departure, destination, windowDate.toISOString().split('T')[0], 1000, 'hohmann');
+                
+                windows.push({
+                    date: windowDate.toDateString(),
+                    deltaV: results.totalDeltaV,
+                    duration: results.transferTime,
+                    efficiency: (10 / parseFloat(results.totalDeltaV) * 100).toFixed(1)
+                });
+            }
+            
+            let windowsHTML = `
+                <div class="result-item">
+                    <h3>Optimal Launch Windows for ${depPlanet.name} → ${destPlanet.name}</h3>
+                    <p><strong>Synodic Period:</strong> ${Math.round(synodicPeriod)} days</p>
+                </div>
+            `;
+            
+            windows.forEach((window, index) => {
+                const efficiency = parseFloat(window.efficiency);
+                const cssClass = efficiency > 70 ? 'launch-window' : 'warning';
+                windowsHTML += `
+                    <div class="${cssClass}">
+                        <h4>Window ${index + 1}: ${window.date}</h4>
+                        <p><strong>Total ΔV:</strong> ${window.deltaV} km/s</p>
+                        <p><strong>Transfer Time:</strong> ${window.duration} days</p>
+                        <p><strong>Efficiency Rating:</strong> ${window.efficiency}%</p>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('mission-results').innerHTML = windowsHTML;
+            document.getElementById('results-panel').style.display = 'block';
+        }
+
+        function showResults(results) {
+            if (typeof results === 'string') {
+                document.getElementById('mission-results').innerHTML = `
+                    <div class="warning">
+                        <h3>Error</h3>
+                        <p>${results}</p>
+                    </div>
+                `;
+            } else {
+                document.getElementById('mission-results').innerHTML = `
+                    <div class="result-item">
+                        <h3>Mission: ${results.departure} → ${results.destination}</h3>
+                        <p><strong>Launch Date:</strong> ${results.launchDate}</p>
+                        <p><strong>Arrival Date:</strong> ${results.arrivalDate}</p>
+                        <p><strong>Transfer Time:</strong> ${results.transferTime} days</p>
+                    </div>
+                    <div class="result-item">
+                        <h3>Trajectory Analysis</h3>
+                        <p><strong>Departure ΔV:</strong> ${results.deltaV1} km/s</p>
+                        <p><strong>Arrival ΔV:</strong> ${results.deltaV2} km/s</p>
+                        <p><strong>Total ΔV:</strong> ${results.totalDeltaV} km/s</p>
+                        <p><strong>Transfer Distance:</strong> ~${results.transferDistance} million km</p>
+                    </div>
+                    <div class="result-item">
+                        <h3>Mission Requirements</h3>
+                        <p><strong>Fuel Required:</strong> ${results.fuelRequired} kg</p>
+                        <p><strong>Mission Complexity:</strong> ${results.totalDeltaV < 10 ? 'Low' : results.totalDeltaV < 20 ? 'Medium' : 'High'}</p>
+                    </div>
+                `;
+            }
+            document.getElementById('results-panel').style.display = 'block';
+        }
+
+        function updateVisualization(departure, destination) {
+            // Reset all planets
+            document.querySelectorAll('.planet').forEach(planet => {
+                planet.style.border = 'none';
+                planet.style.boxShadow = 'none';
+            });
+            
+            // Highlight departure planet
+            const depElement = document.getElementById(departure);
+            if (depElement) {
+                depElement.style.border = '3px solid #00d4ff';
+                depElement.style.boxShadow = '0 0 15px #00d4ff';
+            }
+            
+            // Highlight destination planet
+            const destElement = document.getElementById(destination);
+            if (destElement) {
+                destElement.style.border = '3px solid #ff6b6b';
+                destElement.style.boxShadow = '0 0 15px #ff6b6b';
+            }
+            
+            // Add trajectory visualization
+            const existing = document.querySelector('.trajectory');
+            if (existing) existing.remove();
+            
+            const trajectory = document.createElement('div');
+            trajectory.className = 'trajectory';
+            trajectory.style.width = '200px';
+            trajectory.style.height = '160px';
+            trajectory.style.borderStyle = 'dotted';
+            document.getElementById('orbit-canvas').appendChild(trajectory);
+        }
+
+        // Animate planets
+        function animatePlanets() {
+            const planets = ['venus', 'earth', 'mars', 'jupiter'];
+            const radii = [60, 90, 120, 150];
+            
+            planets.forEach((planet, index) => {
+                const element = document.getElementById(planet);
+                const radius = radii[index];
+                const period = planetData[planet].orbitalPeriod;
+                const speed = 360 / (period * 10); // scaled for visualization
+                
+                let angle = index * 90; // initial positions
+                
+                setInterval(() => {
+                    angle += speed;
+                    const x = 50 + (radius * Math.cos(angle * Math.PI / 180)) / 5;
+                    const y = 50 + (radius * Math.sin(angle * Math.PI / 180)) / 5;
+                    element.style.left = x + '%';
+                    element.style.top = y + '%';
+                }, 100);
+            });
+        }
+
+        // Start planet animation
+        animatePlanets();
+    </script>
+</body>
+</html>
